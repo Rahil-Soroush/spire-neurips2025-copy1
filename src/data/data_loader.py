@@ -6,7 +6,7 @@ import numpy as np
 import scipy.io
 from scipy.signal import resample,iirnotch, filtfilt, butter
 
-from src.utils.plotting import plot_psd_comparison, plot_time_comparison
+from utils.data_plotting import plot_psd_comparison, plot_time_comparison
 
 
 
@@ -152,23 +152,28 @@ def build_dataset_with_lag(gpi_segs, stn_segs, lags=3):
         lags: number of data points we want to lag
 
     Returns:
-        X: (segments, in_channels * (lags+1), time - lags)
-        y: (segments, out_channels * (lags+1), time - lags)
+        X: (segments, reg1_channels * (lags+1), time - lags)
+        y: (segments, reg2_channels * (lags+1), time - lags)
     """
+    # # If we got (N, T, C), swap to (N, C, T)
+    # if gpi_segs.shape[1] > gpi_segs.shape[2]:
+    #     gpi_segs = np.transpose(gpi_segs, (0, 2, 1))
+    #     stn_segs = np.transpose(stn_segs, (0, 2, 1))
+
     X, y = [], []
     for gpi, stn in zip(gpi_segs, stn_segs):
-        # --- Input: GPi ---
+        # --- GPi ---
         lagged_input = [gpi[:, i:gpi.shape[1] - lags + i] for i in range(lags + 1)]
-        X_lag = np.concatenate(lagged_input, axis=0)  # (in_channels * (lags+1), time - lags)
+        X_lag = np.concatenate(lagged_input, axis=0)  # (reg1_channels * (lags+1), time - lags)
 
-        # --- Output: STN (also lagged) ---
+        # --- STN (also lagged) ---
         lagged_stn = [stn[:, i:stn.shape[1] - lags + i] for i in range(lags + 1)]
-        y_lag = np.concatenate(lagged_stn, axis=0)  # (out_channels * (lags+1), time - lags)
+        y_lag = np.concatenate(lagged_stn, axis=0)  # (reg2_channels * (lags+1), time - lags)
 
         X.append(X_lag)
         y.append(y_lag)
 
-    return np.stack(X), np.stack(y)  # (segments, in_channels, time), (segments, out_channels, time)
+    return np.stack(X), np.stack(y)  # (segments, reg1_channels, time), (segments, reg2_channels, time)
 
 def apply_notch_filter(data, fs, freqs=[60], Q=40):
     #assuming input has shape channels, time
@@ -201,85 +206,3 @@ def apply_lowpass_filter(data, fs, cutoff=50, order=8):
         filtered[ch, :] = filtfilt(b, a, data[ch, :])
     return filtered
 
-
-######3 region
-def load_paired_segments_multiRegion_with_filtering(folder_path, segment_length=1.0, cutoff=50, order=8):
-    gpi_data, fs = load_and_normalize_mat(os.path.join(folder_path, 'GPi_Off.mat'))
-    stn_data, _ = load_and_normalize_mat(os.path.join(folder_path, 'STN_Off.mat'))
-    vo_data, _ = load_and_normalize_mat(os.path.join(folder_path, 'VO_Off.mat'))
-    va_data, _ = load_and_normalize_mat(os.path.join(folder_path, 'VA_Off.mat'))
-    # va_data, _ = load_and_normalize_mat(os.path.join(folder_path, 'VIM_Off.mat'))
-
-    #downsample
-    target_fs = 500
-    gpi_data = downsample(gpi_data, fs, target_fs)
-    stn_data = downsample(stn_data, fs, target_fs)
-    vo_data = downsample(vo_data, fs, target_fs)
-    va_data = downsample(va_data, fs, target_fs)
-
-    # # Plot PSD before and after filtering for a channel (example: GPi and STN channel 0)
-    gpi_filtered = apply_notch_filter(gpi_data, target_fs)
-    stn_filtered = apply_notch_filter(stn_data, target_fs)
-    vo_filtered = apply_notch_filter(vo_data, target_fs)
-    va_filtered = apply_notch_filter(va_data, target_fs)
-
-    # Apply high-order low-pass filter
-    gpi_filtered = apply_lowpass_filter(gpi_filtered, target_fs, cutoff, order)
-    stn_filtered = apply_lowpass_filter(stn_filtered, target_fs, cutoff, order)
-    vo_filtered = apply_lowpass_filter(vo_filtered, target_fs, cutoff, order)
-    va_filtered = apply_lowpass_filter(va_filtered, target_fs, cutoff, order)
-    
-    #segmentation
-    gpi_segments = segment_data(gpi_filtered, segment_length, target_fs)
-    stn_segments = segment_data(stn_filtered, segment_length, target_fs)
-    vo_segments = segment_data(vo_filtered, segment_length, target_fs)
-    va_segments = segment_data(va_filtered, segment_length, target_fs)
-
-    print("number of segments for gpi",np.shape(gpi_segments))
-    print("number of segments for stn",np.shape(stn_segments))
-    print("number of segments for vo",np.shape(vo_segments))
-    print("number of segments for va",np.shape(va_segments))
-
-    # Make sure both lists are the same length
-    num_pairs = min(len(gpi_segments), len(stn_segments), len(vo_segments), len(va_segments))
-    gpi_segments = gpi_segments[:num_pairs]
-    stn_segments = stn_segments[:num_pairs]
-    vo_segments = vo_segments[:num_pairs]
-    va_segments = va_segments[:num_pairs]
-
-    return gpi_segments, vo_segments, stn_segments,va_segments, target_fs
-
-def build_dataset_with_lag_multiRegion(gpi_segs, vo_segs, stn_segs, va_segs, lags=3): 
-    """
-    Creates lagged input and output segments from GPi, VO, STN and VA.
-
-    Returns:
-        GPi: (segments, channels * (lags+1), time - lags)
-        VO: (segments, channels * (lags+1), time - lags)
-        STN: (segments, channels * (lags+1), time - lags)
-        VA: (segments, channels * (lags+1), time - lags)
-    """
-    GPi_lagged, VO_lagged, STN_lagged, VA_lagged = [], [], [], []
-    for gpi, vo, stn, va in zip(gpi_segs, vo_segs, stn_segs, va_segs):
-        # --- GPi ---
-        lagged_gpi = [gpi[:, i:gpi.shape[1] - lags + i] for i in range(lags + 1)]
-        gpi_lag = np.concatenate(lagged_gpi, axis=0)  # (in_channels * (lags+1), time - lags)
-
-        # --- VO ---
-        lagged_vo = [vo[:, i:vo.shape[1] - lags + i] for i in range(lags + 1)]
-        VO_lag = np.concatenate(lagged_vo, axis=0)  # (in_channels * (lags+1), time - lags)
-
-        # --- STN (also lagged) ---
-        lagged_stn = [stn[:, i:stn.shape[1] - lags + i] for i in range(lags + 1)]
-        stn_lag = np.concatenate(lagged_stn, axis=0)  # (out_channels * (lags+1), time - lags)
-
-        # --- VA ---
-        lagged_va = [va[:, i:va.shape[1] - lags + i] for i in range(lags + 1)]
-        VA_lag = np.concatenate(lagged_va, axis=0)  # (in_channels * (lags+1), time - lags)
-
-        GPi_lagged.append(gpi_lag)
-        VO_lagged.append(VO_lag)
-        STN_lagged.append(stn_lag)
-        VA_lagged.append(VA_lag)
-
-    return np.stack(GPi_lagged), np.stack(VO_lagged) ,np.stack(STN_lagged), np.stack(VA_lagged)  # (segments, channels, time)
