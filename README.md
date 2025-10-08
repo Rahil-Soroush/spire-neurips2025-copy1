@@ -72,7 +72,7 @@ pip install -r requirements.txt
 The scripts_synthetic/ directory includes full experimental workflows used in the study using synthetic data:
 
 - train_eval_synth.py: generates 3 synthetic datasets and runs different variations of the SPIRE model with 4 different seeds. Then evaluates all these models and generates an excel file, which later can be used to compare the performance with DLAG [1] or compare the perfromance of different variants for ablation.
-- eval_DLAGfitted.py: DLAG is fitted on synthetic dataset using MATLAB demo function published by writers [2] on 4 different seeds. in This function the performance is evaluated similar to SPIRE.
+- eval_DLAGfitted.py: DLAG is fitted on synthetic dataset using MATLAB demo function published by Gokcen et al. [2] on 4 different seeds. in This function the performance is evaluated similar to SPIRE.
 
 ---
 ## Full Pipeline Scripts:
