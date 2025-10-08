@@ -15,7 +15,7 @@ SPIRE is trained on off-stimulation data and tested on various conditions (e.g.,
 
 ## Repository Structure
 ```bash
-spire-ICLR2026/
+spire-iclr2026/
 ├── scripts/                   # Scripts used to process full dataset (non-public)
 │   ├── train_real_all_subjects.py
 │   ├── eval_dimSweep.py
@@ -58,8 +58,8 @@ spire-ICLR2026/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/SPIRE-Anonym/spire-ICLR2026.git
-cd spire-ICLR2026
+git clone https://github.com/SPIRE-Anonym/spire-iclr2026.git
+cd spire-iclr2026
 ```
 2. Create and activate a virtual environment (optional but recommended), then install dependencies:
 
