@@ -6,7 +6,7 @@ import os
 import torch
 from data.data_loader import build_dataset_with_lag, load_paired_segments_with_filtering
 from utils.training_utils import sched_real
-from models.train import train_spire_real
+from models.training import train_spire_real
 
 base_dir = r"F:\comp_project\LPF_Data\imagingContacts"  # Base directory path
 model_save_dir = r"F:\comp_project\2region_models_SPIRE_dimSweep"

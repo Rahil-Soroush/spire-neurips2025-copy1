@@ -11,7 +11,7 @@ from IPython.display import display
 from data.synth_data import generate_synth_data
 from data.data_loader import build_dataset_with_lag
 from utils.training_utils import gen_ablation_variants, set_seed
-from models.train import train_spire_synth
+from models.training import train_spire_synth
 from evaluate_synth import evaluate_all_models_and_datasets
 
 data_save_dir = r"F:\comp_project\synthecticData\dataT"#your target directory to save datasets

@@ -1,4 +1,4 @@
-#after choosing best model for eachs ubject we quantify the performance of model using CCA and reconstruction MSE
+#after choosing best model for each subject we quantify the performance of model using CCA and reconstruction MSE
 import sys, pathlib
 root = pathlib.Path(__file__).resolve().parents[1]   # repo root
 sys.path.insert(0, str(root / "src"))

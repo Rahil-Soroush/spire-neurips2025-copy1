@@ -1,4 +1,4 @@
-# extra measure showing shift with rrespect to offstim in all latents
+# extra measure showing shift with respect to offstim in all latents
 import sys, pathlib
 root = pathlib.Path(__file__).resolve().parents[1]   # repo root
 sys.path.insert(0, str(root / "src"))
